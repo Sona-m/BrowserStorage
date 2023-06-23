@@ -1,0 +1,360 @@
+Three main ways to store data in your browser
+1. local storage (capacity most , any window , expires - never , storage location - browswer , sent with req - no)
+2.session storage (capacity more , same tab , expires - on tab close , storage location - browswer , sent with req -no)
+3.cookies (capacity less , any window , expires - manually set  , storage location - browswer nd server , sent with req -yes)
+
+
+
+*************Local Storage*********************
+
+application -> storage-> local storage
+key value pairs(string)
+
+Methods Provided by the Local Storage
+
+>>>> localStorage.setItem("name" , "sonam" )
+ localStorage.setItem(key,value)
+store key value pair
+
+>>>localStorage.getItem(key)
+get the value by key
+
+>>>localStorage.removeItem(key) 
+remove the key by its value
+
+>>>localStorage.clear()
+delete everything
+
+>>>localStorage.key(index)
+get the key on a given position
+
+>>>localStorage.length
+the number of stored items
+
+>>>localStorage.key =value
+you can also set the value like this
+
+note
+1. Both key and values must be strings
+2.we can use the two JSON methods to store objects in localStorage
+
+JSON.stringify(object) - converts objects to json strings
+jSON.parse(string) - converts string to objects
+ 
+*******Session Storage****************************
+
+1. used less often than local storage.
+2 properties and methods are same as local storage
+3. session storage exists only within the current browser tab. another tab with same page will have a different storage.
+4.the data survives page refresh. but not closing/opening the tab
+
+******************Storage Event**************************
+
+When the data gets updated in local Storage or session storage,
+storage event triggers with these properties.
+
+1.key -> the key
+2.oldValue -> previous value
+3.newValue -> new value
+4.url -> page url
+5. StorageArea -> local or session storage
+
+
+>> we can listen the onstorage event of window which is triggered when updates are made to the same
+storage from other documents.
+
+window.onstorage = (e) => {
+ console.log('changed')
+ alert('changed')
+}
+
+*******************cookies*********************************
+unlike the local and session storage cookies dont have the  very nice interface to communicate
+the only way to intract with cookies are is through document.cookie obejct
+
+>>> name ,value , path , size ,expire date 
+this object allow you to see all cookies and set a new cookie
+
+>> document.cookie = 'name=sonam ; expires=' + new Date(2020 , 0 ,1).toUTCString()
+
+view all the cookies
+
+>> console.log(document.cookie)
+
+**************************indexed db**************************
+application -> IndexedDB
+database -> collection sotres -> documents
+we dont need to use here JSON.stringify() nd  JSON.parse()
+
+>> if you want to store and access data to the webpage and server you cant use local and session storage
+bcs local storage is only available to the web page
+though indexedDB available to the both
+it can also be used to store binary data
+
+to use you can do either of one
+1. module
+2. download locally and import
+import {
+ //methods
+} from './index.js';
+3. using cdn 
+
+import {
+   // methods
+} from 'cdn link'
+
+ method
+
+set('user_id' , Date.now())
+.then(
+  console.log('value uploaded')
+)
+.catch(
+  console.warn
+)
+
+>>> set(key , value)
+all these methods returns promises
+
+>>>set('info , myobj).then().catch()
+myobj - object
+
+>>> get('info').then((data)=>{
+  console.log(data.id , data.email)
+}
+).catch(console.warn)
+
+>>get(key)
+
+>>>> update('user_id' , (val)=> val-100).then().catch()
+update(key ,value // value or function )
+
+>>>> del(key).then().catch()
+
+del('nope').then().catch()
+
+>>>keys() // gets me all the keys
+>>>values() // gets me all the values
+>>>entries() //gets me all the keys and values
+
+keys()   // array of keys
+.then(res=>{
+ console.log(res)
+}
+
+values()  // array of values
+.then(res=>{
+ console.log(res)
+}
+
+entries() //   2-d array 
+.then(res=>{
+ console.log(res)
+}
+
+>>>> let st = createStore('myDB', 'myStore')
+creates store
+
+if you have two stores and you want to work with both
+then for the methods you can pass third argument as you database name
+
+>>>> set(key ,value , database name //st).then().catch()
+
+******* opening a database*******
+1.
+>>>const DBOpenReq = window.indexedDB.open('testDatabase' , 1);
+the call to the open function doesnt open the database but it returns IDBOpenDBRequest object with a result (success or error)
+that you handle as an event
+
+the second paramter to open() is version of the databse.
+
+>> to see open application -> indexedDB
+
+2. second step is to set handlers for your success or error
+
+>>> DBOpenReq.addEventListener('error' , (err)=>{
+   // error occur while trying to open DB
+  console.log(err)
+})
+
+let db =null;
+>>> DBOpenReq.addEventListener('success' , (event)=>{
+    // DB has been opended... after upgradeneeded
+  console.log(event.target.result);
+   // you can store it in a variable also
+  db = event.target.result;
+})
+
+>>> DBOpenReq.addEventListener('upgradeneeded' , (event)=>{
+   // first time opening this DB
+   // OR a new version was passed into open()
+ console.log(event.target.result);
+   // you can store it in a variable also
+    db = event.target.result;
+})
+
+
+3. 
+now to structure the database indexedDB uses object stores and a single database can contain any number of stores
+(key,value)
+
+let objectStore = null;
+
+>>> DBOpenReq.addEventListener('upgradeneeded' , (event)=>{
+   // first time opening this DB
+   // OR a new version was passed into open()
+ console.log(event.target.result);
+   // you can store it in a variable also
+    db = event.target.result;
+    objectStore = db.createObjectStore('dbStore',{
+     keyPath : "id",
+    })
+})
+
+createObjectStore() method takes a name of object sotre, and a parameter object which is optional
+keyPath - a property that makes an individual object in the sotre unique
+
+you can access all your object store present inside your db 
+by
+>> db.objectStoreNames
+
+and if you wanna check where a particular store exist or not
+>> db.objectStoreNames.contains('dbStore')
+
+you can call this inside upgradeneeded to get the version info
+>>event.oldVersion
+>>event.newVersion
+
+>> if you want to delete your object store 
+>>db.deleteObjectStore('dbStore')
+//object store name
+
+***************Transactions  and Requests in indexedDB********
+
+let data = {
+ id : 1,
+ name :sonam,
+ age : 21,
+};
+
+now we have object and we want to put this in database
+ 
+with indexeddb everything we do , it should be wrapped within a trasaction
+
+let tx = databaseName.transaction('obejctStoreName' , mode);
+//readonly ,readwrite
+
+let tx = db.transaction('dbStore' , 'readwrite');
+transactions is gonna have events
+
+tx.oncomplete = (e) =>{
+   console.log(e)
+}
+
+tx.onerror = (err) =>{
+ // if any one of req failed
+  console.log(err)
+}
+
+transaction is ready to use
+
+
+
+let store = tx.objectStore('dbStore')
+let req = store.add(data); // object that we created
+
+req.onsuccess = (e) =>{
+   console.log('success')
+}
+
+req.onerror = (err) =>{
+   console.log(err)
+}
+
+//validate
+application -> indexedDB - dbstore
+index ,key ,value
+
+
+********** get and getAll****************************
+
+ let tx = db.transaction('dbStore' , 'readonly')
+
+tx.oncomplete = (ev) => {
+
+
+}
+  
+let store = tx.objectStore('dbStore')
+
+let getReq = store.getAll();
+ // returns an array
+ find all the records
+options - key or keyRange
+getReq.onsuccess = (e) => {
+  console.log({e.target});
+}
+
+
+let req = store.get(id);
+// returns a single obj
+req.onsuccess = (ev) =>{
+  console.log(ev.target.result)
+}
+
+
+********** insert ,update ,delete*******************
+
+create a transaction with readwritemode
+
+let store = tx.objectStore('dbStore')
+
+let req = sotre.delete(data/key);  // req a delete
+
+req.onsucces = (e) ={}
+
+
+to insert - add()
+to update - put()
+
+*************************** defining indexes******************
+
+indexes are kind of object store used to retriev data from the reference object store.
+
+
+// create index 
+
+objectStore.createIndex('indexname' , 'property' ,options)
+returns an index obj
+index name
+property on data  you want to index
+options - unique , multientry
+{unique : true}
+
+
+
+************** cursors***************************
+
+another way to retrieve all of the data
+openCursor();
+
+someObjStore.openCursor('optinalKeyrange' , 'optinalDirection')
+returns a promise
+direction - next or prev
+to move on to the next obj
+>>>cursor.continue()
+
+>>cursor.key
+>>cursor.value
+>>>cursor.value[field]
+
+
+
+
+
+
+
+
+
+ 
+
