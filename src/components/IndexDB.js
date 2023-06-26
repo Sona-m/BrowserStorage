@@ -5,21 +5,20 @@ import { createCollectionsInIndexedDB } from "../indexedDB";
 const IndexDB = () => {
   useEffect(() => {
     createCollectionsInIndexedDB();
-  });
+    handleGet();
+  }, []);
 
-  const [userData, setUserData] = useState({
-    id: "",
-    name: "",
-    age: "",
-    place: "",
-  });
+  const [allUsersData, setAllUsersData] = useState([]);
 
   const style = "bg-[#176B87]  text-[#DAFFFB] px-2 py-2 border rounded mb-2";
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [place, setPlace] = useState("");
+  const [addUser, setAddUser] = useState(false);
+  const [editUser, setEditUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState({});
 
-  const handleAdd = (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
     const dbPromise = idb.open("test-db", 1);
     if (name && age && place) {
@@ -27,44 +26,69 @@ const IndexDB = () => {
         const db = dbPromise.result;
         const tx = db.transaction("dbStore", "readwrite");
         const dbStore = tx.objectStore("dbStore");
-        const users = dbStore.put({
-          id: 1,
-          name,
-          age,
-          place,
-        });
-        users.onsuccess = () => {
-          tx.oncomplete = () => {
-            db.close();
+        if (addUser) {
+          const users = dbStore.put({
+            id: allUsersData?.length,
+            name,
+            age,
+            place,
+          });
+          users.onsuccess = () => {
+            tx.oncomplete = () => {
+              db.close();
+            };
+            setAddUser(false);
+            handleGet();
+            console.log("user added");
+            setName("");
+            setAge("");
+            setPlace("");
           };
-          console.log("user added");
-          setName("");
-          setAge("");
-          setPlace("");
-        };
 
-        users.onerror = (event) => {
-          console.log("error", event);
-        };
+          users.onerror = (event) => {
+            console.log("error add", event);
+          };
+        } else {
+          const users = dbStore.put({
+            id: selectedUser?.id,
+            name,
+            age,
+            place,
+          });
+          users.onsuccess = (query) => {
+            tx.oncomplete = () => {
+              db.close();
+            };
+            console.log("User Updated");
+            setName("");
+            setAge("");
+            setPlace("");
+            handleGet();
+            setSelectedUser({});
+            setEditUser(false);
+          };
+
+          users.onerror = (event) => {
+            console.log("error update", event);
+          };
+        }
       };
     }
   };
 
-  const handleGet = (event) => {
-    event.preventDefault();
+  const handleGet = () => {
     const dbPromise = idb.open("test-db", 1);
     dbPromise.onsuccess = () => {
       const db = dbPromise.result;
       const tx = db.transaction("dbStore", "readonly");
       const dbStore = tx.objectStore("dbStore");
-      const users = dbStore.get(1);
-      users.onsuccess = () => {
+      const users = dbStore.getAll();
+      users.onsuccess = (query) => {
         tx.oncomplete = () => {
           db.close();
         };
-        console.log(users.result);
-        setUserData(users.result);
-        console.log(userData);
+        setAllUsersData(query.srcElement.result);
+        console.log(allUsersData);
       };
 
       users.onerror = (event) => {
@@ -73,28 +97,22 @@ const IndexDB = () => {
     };
   };
 
-  const handleDelete = (event) => {
-    event.preventDefault();
+  const handleDelete = (user) => {
     const dbPromise = idb.open("test-db", 1);
     dbPromise.onsuccess = () => {
       const db = dbPromise.result;
       const tx = db.transaction("dbStore", "readwrite");
       const dbStore = tx.objectStore("dbStore");
-      const users = dbStore.delete(1);
-      users.onsuccess = () => {
+      const deleteduser = dbStore.delete(user.id);
+      deleteduser.onsuccess = () => {
         tx.oncomplete = () => {
           db.close();
         };
         console.log("user deleted");
-        setUserData({
-          id: "",
-          name: "",
-          age: "",
-          place: "",
-        });
+        handleGet();
       };
 
-      users.onerror = (event) => {
+      deleteduser.onerror = (event) => {
         console.log("error", event);
       };
     };
@@ -106,17 +124,73 @@ const IndexDB = () => {
       </div>
       <div className="mr-6 w-9/12 bg-[#DAFFFB] mx-auto float-right h-screen justify-between ">
         <div className="flow-root h-full">
-          <div className="w-3/5 text-center text-[#176B87] float-left h-full">
+          <div className="w-3/5 text-center text-[#176B87] float-left h-full mr-10 ml-5">
             Results
-            <h1 className="mt-5">Name : {userData.name}</h1>
-            <p>Age : {userData.age}</p>
-            <p>Place : {userData.place}</p>
+            <table className="table-auto border-2 border-[#176B87] w-full mr-2 mt-2 ">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Age</th>
+                  <th>Place</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allUsersData.map((user) => {
+                  return (
+                    <tr key={user.id}>
+                      <td>{user.name}</td>
+                      <td>{user.age}</td>
+                      <td>{user.place}</td>
+                      <td>
+                        <button
+                          className={style}
+                          onClick={() => {
+                            setAddUser(false);
+                            setEditUser(true);
+                            setSelectedUser(user);
+                            setName(user.name);
+                            setAge(user.age);
+                            setPlace(user.place);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className={style}
+                          onClick={() => handleDelete(user)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <div className="mx-auto">
-            <form>
+          <div className="mx-auto mr-5">
+            <h1 className="text-[#176B87] mb-1">
+              To add the user click on ADD button
+            </h1>
+            <button
+              className="bg-[#176B87] rounded border px-3 py-2 text-[#F7FFE5] "
+              onClick={() => {
+                setAddUser(true);
+                setEditUser(false);
+                setSelectedUser({});
+                setName("");
+                setAge("");
+                setPlace("");
+              }}
+            >
+              Add
+            </button>
+
+            <form onSubmit={handleSubmit}>
               <div className="flex flex-col w-60 justify-center">
-                <h1 className="text-[#176B87] mb-3 mr-5 text-center">
-                  Enter your details
+                <h1 className="text-[#176B87] mb-3 mr-5 text-center mt-5">
+                  {editUser ? "Update" : "Add"} User
                 </h1>
                 <input
                   onChange={(event) => setName(event.target.value)}
@@ -142,15 +216,7 @@ const IndexDB = () => {
                   className="px-2 py-2 border rounded border-gray-200 mb-4"
                   autoComplete="off"
                 />
-                <button onClick={handleAdd} className={style}>
-                  Add
-                </button>
-                <button onClick={handleGet} className={style}>
-                  Get
-                </button>
-                <button onClick={handleDelete} className={style}>
-                  Delete
-                </button>
+                <button className={style}>{editUser ? "Update" : "Add"}</button>
               </div>
             </form>
           </div>
