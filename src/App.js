@@ -2,8 +2,15 @@ import "./App.css";
 import DropdownPage from "./pages/DropdownPage";
 import InputForm from "./components/InputForm";
 import Card from "./components/Card";
+import IndexDB from "./components/IndexDB";
+
+
+
+
 
 function App() {
+
+  
   return (
     <div className="App h-screen w-screen bg-[#176B87]">
       <div className="h-20 w-full bg-[#2D4356] text-center text-[#176B87] text-4xl italic pt-4">
@@ -18,6 +25,9 @@ function App() {
         </div>
         <Card />
       </div>
+     
+        <IndexDB />
+     
     </div>
   );
 }

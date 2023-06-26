@@ -23,10 +23,8 @@ const InputForm = () => {
       console.log(formData);
     } else if (methodName === "cookies") {
       const formDataString = JSON.stringify(formData);
-      document.cookie = `formData=${encodeURIComponent(
-        formDataString
-      )}; expires=Thu, 1 Jan 2026 12:00:00 UTC; path=/`;
-
+      document.cookie = `formData=${formDataString}
+      expires=Thu, 1 Jan 2026 12:00:00 UTC; path=/`;
       console.log(formData);
     }
     setName("");
@@ -44,11 +42,11 @@ const InputForm = () => {
       console.log(formData);
       handleData(formData);
     } else if (methodName === "cookies") {
-      const cookieValue = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("formData"))
-        .split("=")[1];
-      formData = JSON.parse(decodeURIComponent(cookieValue));
+      const cookieValue = document.cookie   // return a string containing all the cookies seperted by semicolon
+        .split("; ")      // split the cookie string into array of individual cookie
+        .find((row) => row.startsWith("formData"))  // it searches for the first cookie entry that starts with the string "formData". 
+        .split("=")[1];   //This creates an array with two elements: the cookie name and its corresponding value. By accessing index 1 of the array, we extract the value of the cookie.
+      formData = JSON.parse(cookieValue);
       console.log(formData);
       handleData(formData);
     }
